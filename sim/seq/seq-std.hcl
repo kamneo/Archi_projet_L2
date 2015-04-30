@@ -82,12 +82,19 @@ bool need_regids =
 	icode in { RRMOVL, OPL, IOPL, PUSHL, POPL, IRMOVL, RMMOVL, MRMOVL };
 
 # Does fetched instruction require a constant word?
+
+	#Exercice 1 question 2 :
 bool need_valC =
-	icode in { IRMOVL, RMMOVL, MRMOVL, JXX, CALL, IOPL };
+	icode in { RMMOVL, MRMOVL, JXX, CALL, IOPL, IRMOVL };
 
 bool instr_valid = icode in 
 	{ NOP, HALT, RRMOVL, IRMOVL, RMMOVL, MRMOVL,
 	       OPL, IOPL, JXX, CALL, RET, PUSHL, POPL };
+
+int instr_next_ifun = [
+       1 : -1;
+];
+
 
 ################ Decode Stage    ###################################
 
@@ -122,8 +129,10 @@ int dstM = [
 
 ## Select input A to ALU
 int aluA = [
-	icode in { RRMOVL, OPL } : valA;
-	icode in { IRMOVL, RMMOVL, MRMOVL, IOPL } : valC;
+	#Exercice 1 question 2 :
+	icode in { IRMOVL, IOPL } && rA == RNONE : valC;
+	icode in { RRMOVL, OPL, IOPL } : valA;
+	icode in { RMMOVL, MRMOVL } : valC;
 	icode in { CALL, PUSHL } : -4;
 	icode in { RET, POPL } : 4;
 	# Other instructions don't need ALU

@@ -1,0 +1,7 @@
+.pos 0
+irmovl 0, %eax
+irmovl 0, %ebx
+iaddl 7, %eax
+iaddl 2, %ebx
+addl %eax, %ebx
+halt

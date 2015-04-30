@@ -26,7 +26,10 @@ typedef enum { R_ARG, M_ARG, I_ARG, NO_ARG } arg_t;
  */
 typedef enum { I_NOP, I_HALT, I_RRMOVL, I_IRMOVL, I_RMMOVL, I_MRMOVL,
 	       I_ALU, I_JXX, I_CALL, I_RET, I_PUSHL, I_POPL,
-	       I_ALUI, I_LEAVE, I_JREG, I_JMEM, I_POP2 } itype_t;
+	       I_FREE1, I_LEAVE, I_JREG, I_JMEM, I_POP2 } itype_t;
+
+/* pour compatibilité */
+#define I_ALUI I_ALU
 
 /* pour compatibilité */
 #define I_IADDL I_ALUI
