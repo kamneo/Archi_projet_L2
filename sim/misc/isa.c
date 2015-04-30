@@ -87,6 +87,10 @@ instr_t instruction_set[] =
     {"jreg",   HPACK(I_JREG, 0) , 2, R_ARG, 1, 1, NO_ARG, 0, 0 },
     {"jmem",   HPACK(I_JMEM, 0), 6, M_ARG, 1, 0, NO_ARG, 0, 0 },
 
+    /* Exercice 3.1 */
+    {"entre",   HPACK(I_ENTER, 0), 0, NO_ARG, 0, 0, NO_ARG, 0, 0 },
+    {"entre1",  HPACK(I_ENTER, 1), 0, NO_ARG, 0, 0, NO_ARG, 0, 0 },
+
     /* For allocation instructions, arg1hi indicates number of bytes */
     {".byte",  0x00, 1, I_ARG, 0, 1, NO_ARG, 0, 0 },
     {".word",  0x00, 2, I_ARG, 0, 2, NO_ARG, 0, 0 },
