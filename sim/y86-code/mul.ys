@@ -1,0 +1,3 @@
+irmovl 3, %edx
+irmovl 3, %ecx
+mul %edx, %ecx
