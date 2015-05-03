@@ -35,11 +35,16 @@ intsig CALL	'I_CALL'
 intsig RET	'I_RET'
 intsig PUSHL	'I_PUSHL'
 intsig POPL	'I_POPL'
-intsig JMEM	'I_JMEM'
+#intsig JMEM	'I_JMEM'
 intsig JREG	'I_JREG'
 intsig LEAVE	'I_LEAVE'
 # Exercice 3.1
 intsig ENTER	'I_ENTER'
+#Exercice 3.2
+intsig MUL	'I_MUL'
+
+intsig REAX		'REG_EAX'
+intsig cc 'cc'	
 
 ##### Symbolic representation of Y86 Registers referenced explicitly #####
 intsig RESP     'REG_ESP'    	# Stack Pointer
@@ -95,6 +100,7 @@ bool instr_valid = icode in
 
 #Exercice 3 question 2:
 int instr_next_ifun = [
+	icode == MUL && ifun == 2 && cc != 2 : 1;
 	icode == ENTER && ifun == 0 : 1;
     1 : -1;
 ];
@@ -115,6 +121,7 @@ int srcA = [
 int srcB = [
 	icode in { OPL, IOPL, RMMOVL, MRMOVL } : rB;
 	#Exercice 3 question 2:
+	icode == MUL && ifun == 2 : REAX;
 	icode in { PUSHL, POPL, CALL, RET, ENTER } : RESP;
 	1 : RNONE;  # Don't need register
 ];
@@ -124,6 +131,9 @@ int dstE = [
 	#Exercice 3 question 2:
 	icode == ENTER && ifun == 1 : REBP;
 	icode in { RRMOVL, IRMOVL, OPL, IOPL } : rB;
+	#Exercice 3 question 2:
+	icode == MUL && ifun == 0 : REAX;
+	icode == MUL && ifun == 2 && cc != 2 : REAX;
 	icode in { PUSHL, POPL, CALL, RET, ENTER } : RESP;
 	1 : RNONE;  # Don't need register
 ];
@@ -164,7 +174,9 @@ int alufun = [
 ];
 
 ## Should the condition codes be updated?
-bool set_cc = icode in { OPL, IOPL };
+bool set_cc = 	icode == OPL ||
+				icode in { MUL } && ifun == 0 ||
+				icode == MUL && ifun == 1;
 
 ################ Memory Stage    ###################################
 
