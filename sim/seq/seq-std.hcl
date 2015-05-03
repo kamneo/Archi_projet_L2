@@ -113,15 +113,15 @@ int instr_next_ifun = [
 int srcA = [
 	#Exercice 3 question 2:
 	icode == ENTER : REBP;
-	icode in { RRMOVL, RMMOVL, OPL, PUSHL } : rA;
+	icode in { RRMOVL, RMMOVL, OPL, PUSHL } || icode == MUL && ifun == 2 : rA;
 	icode in { POPL, RET } : RESP;
 	1 : RNONE; # Don't need register
 ];
 
 ## What register should be used as the B source?
 int srcB = [
-	icode in { OPL, IOPL, RMMOVL, MRMOVL } : rB;
 	#Exercice 3 question 2:
+	icode in { OPL, IOPL, RMMOVL, MRMOVL } || icode == MUL && ifun == 1 : rB;
 	icode == MUL && ifun == 2 : REAX;
 	icode in { PUSHL, POPL, CALL, RET, ENTER } : RESP;
 	1 : RNONE;  # Don't need register
@@ -135,6 +135,7 @@ int dstE = [
 	#Exercice 3 question 2:
 	icode == MUL && ifun == 0 : REAX;
 	icode == MUL && ifun == 2 && cc != 2 : REAX;
+	icode == MUL && ifun == 1 : rB;
 	icode in { PUSHL, POPL, CALL, RET, ENTER } : RESP;
 	1 : RNONE;  # Don't need register
 ];
@@ -151,11 +152,12 @@ int dstM = [
 int aluA = [
 	#Exercice 1 question 2 :
 	icode in { IRMOVL, IOPL } && rA == RNONE : valC;
-	icode in { RRMOVL, OPL, IOPL } : valA;
+	icode in { RRMOVL, OPL, IOPL } || icode == MUL && ifun == 2 : valA;
 	icode in { RMMOVL, MRMOVL } : valC;
 	#Exercice 3 question 2:
 	icode == ENTER && ifun == 0 : -4;
-	icode == ENTER && ifun == 1 : 0;
+	icode == MUL && ifun == 1 : -1;
+	icode == ENTER && ifun == 1 || icode == MUL && ifun == 0 : 0;
 	icode in { CALL, PUSHL } : -4;
 	icode in { RET, POPL } : 4;
 	# Other instructions don't need ALU
@@ -163,8 +165,8 @@ int aluA = [
 
 ## Select input B to ALU
 int aluB = [
-	icode in { RMMOVL, MRMOVL, OPL, IOPL, CALL, PUSHL, RET, POPL, ENTER } : valB;
-	icode in { RRMOVL, IRMOVL } : 0;
+	icode in { RMMOVL, MRMOVL, OPL, IOPL, CALL, PUSHL, RET, POPL, ENTER } || icode == MUL && ifun in { 1, 2 } : valB;
+	icode in { RRMOVL, IRMOVL } || icode == MUL && ifun == 0 : 0;
 	# Other instructions don't need ALU
 ];
 
@@ -176,8 +178,7 @@ int alufun = [
 
 ## Should the condition codes be updated?
 bool set_cc = 	icode == OPL ||
-				icode in { MUL } && ifun == 0 ||
-				icode == MUL && ifun == 1;
+				icode in { MUL } && ifun in {0, 1};
 
 ################ Memory Stage    ###################################
 
