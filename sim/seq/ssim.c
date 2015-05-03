@@ -663,19 +663,17 @@ static exc_t sim_step()
     }
     valp = pc;
     if(gen_instr_next_ifun () != -1)
-   		ifun = gen_instr_next_ifun();
-	else{
-	    if (get_byte_val(mem, valp, &instr)) {
+		ifun = gen_instr_next_ifun();
+	else if (get_byte_val(mem, valp, &instr)) {
 		icode = HI4(instr);
 		ifun = LO4(instr);
-	    } else {
-		instr = HPACK(I_NOP,0);
-		icode = I_NOP;
-		ifun = 0;
-		status = EXC_ADDR;
-		sim_log("Couldn't fetch at address 0x%x\n", valp);
-	    }
-	}
+    } else {
+	instr = HPACK(I_NOP,0);
+	icode = I_NOP;
+	ifun = 0;
+	status = EXC_ADDR;
+	sim_log("Couldn't fetch at address 0x%x\n", valp);
+    }
     valp++;
     if (gen_need_regids()) {
 	byte_t regids;
@@ -766,8 +764,8 @@ static exc_t sim_step()
 	prev_bcond_in = bcond;
     } else {
 	/* Update PC */
-	    if (gen_instr_next_ifun() == -1)
-			pc_in = gen_new_pc();
+    if (gen_instr_next_ifun() == -1)
+		pc_in = gen_new_pc();
     } 
     sim_report();
     return status;
@@ -777,7 +775,6 @@ static exc_t sim_step()
   Run processor until one of following occurs:
   - An exception is encountered in WB.
   - max_instr instructions have completed through WB
-
   Return number of instructions executed.
   if statusp nonnull, then will be set to exception status of final instruction
   if ccp nonnull, then will be set to condition codes of final instruction

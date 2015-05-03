@@ -39,7 +39,7 @@ intsig JMEM	'I_JMEM'
 intsig JREG	'I_JREG'
 intsig LEAVE	'I_LEAVE'
 # Exercice 3.1
-intsig LEAVE	'I_ENTER'
+intsig ENTER	'I_ENTER'
 
 ##### Symbolic representation of Y86 Registers referenced explicitly #####
 intsig RESP     'REG_ESP'    	# Stack Pointer
@@ -91,10 +91,12 @@ bool need_valC =
 
 bool instr_valid = icode in 
 	{ NOP, HALT, RRMOVL, IRMOVL, RMMOVL, MRMOVL,
-	       OPL, IOPL, JXX, CALL, RET, PUSHL, POPL };
+	       OPL, IOPL, JXX, CALL, RET, PUSHL, POPL, ENTER };
 
+#Exercice 3 question 2:
 int instr_next_ifun = [
-       1 : -1;
+	icode == ENTER && ifun == 0 : 1;
+    1 : -1;
 ];
 
 
@@ -102,6 +104,8 @@ int instr_next_ifun = [
 
 ## What register should be used as the A source?
 int srcA = [
+	#Exercice 3 question 2:
+	icode == ENTER : REBP;
 	icode in { RRMOVL, RMMOVL, OPL, PUSHL } : rA;
 	icode in { POPL, RET } : RESP;
 	1 : RNONE; # Don't need register
@@ -110,14 +114,17 @@ int srcA = [
 ## What register should be used as the B source?
 int srcB = [
 	icode in { OPL, IOPL, RMMOVL, MRMOVL } : rB;
-	icode in { PUSHL, POPL, CALL, RET } : RESP;
+	#Exercice 3 question 2:
+	icode in { PUSHL, POPL, CALL, RET, ENTER } : RESP;
 	1 : RNONE;  # Don't need register
 ];
 
 ## What register should be used as the E destination?
 int dstE = [
+	#Exercice 3 question 2:
+	icode == ENTER && ifun == 1 : REBP;
 	icode in { RRMOVL, IRMOVL, OPL, IOPL } : rB;
-	icode in { PUSHL, POPL, CALL, RET } : RESP;
+	icode in { PUSHL, POPL, CALL, RET, ENTER } : RESP;
 	1 : RNONE;  # Don't need register
 ];
 
@@ -135,6 +142,9 @@ int aluA = [
 	icode in { IRMOVL, IOPL } && rA == RNONE : valC;
 	icode in { RRMOVL, OPL, IOPL } : valA;
 	icode in { RMMOVL, MRMOVL } : valC;
+	#Exercice 3 question 2:
+	icode == ENTER && ifun == 0 : -4;
+	icode == ENTER && ifun == 1 : 0;
 	icode in { CALL, PUSHL } : -4;
 	icode in { RET, POPL } : 4;
 	# Other instructions don't need ALU
@@ -142,7 +152,7 @@ int aluA = [
 
 ## Select input B to ALU
 int aluB = [
-	icode in { RMMOVL, MRMOVL, OPL, IOPL, CALL, PUSHL, RET, POPL } : valB;
+	icode in { RMMOVL, MRMOVL, OPL, IOPL, CALL, PUSHL, RET, POPL, ENTER } : valB;
 	icode in { RRMOVL, IRMOVL } : 0;
 	# Other instructions don't need ALU
 ];
@@ -162,10 +172,13 @@ bool set_cc = icode in { OPL, IOPL };
 bool mem_read = icode in { MRMOVL, POPL, RET };
 
 ## Set write control signal
-bool mem_write = icode in { RMMOVL, PUSHL, CALL };
+											#Exercice 3 question 2:
+bool mem_write = icode in { RMMOVL, PUSHL, CALL } || icode == ENTER && ifun == 0;
 
 ## Select memory address
 int mem_addr = [
+	#Exercice 3 question 2:
+	icode == ENTER && ifun == 0 : valE;
 	icode in { RMMOVL, PUSHL, CALL, MRMOVL } : valE;
 	icode in { POPL, RET } : valA;
 	# Other instructions don't need address
@@ -173,6 +186,8 @@ int mem_addr = [
 
 ## Select memory input data
 int mem_data = [
+	#Exercice 3 question 2:
+	icode == ENTER && ifun == 0 : valA;
 	# Value from register
 	icode in { RMMOVL, PUSHL } : valA;
 	# Return PC

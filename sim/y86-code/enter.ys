@@ -1,0 +1,7 @@
+	irmovl 300, %esp
+	irmovl 42, %ebp
+	irmovl 3, %ecx
+	pushl %ecx
+	enter
+	pushl %ecx
+	halt
