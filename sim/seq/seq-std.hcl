@@ -100,9 +100,9 @@ bool instr_valid = icode in
 
 #Exercice 3 question 2:
 int instr_next_ifun = [
-	icode == MUL && ifun == 2 && cc != 2 : 1;
 	icode in { MUL, ENTER} && ifun == 0 : 1;
 	icode in { MUL } && ifun == 1 : 2;
+	icode == MUL && ifun == 2 && cc != 2 : 1;
     1 : -1;
 ];
 
@@ -178,7 +178,7 @@ int alufun = [
 
 ## Should the condition codes be updated?
 bool set_cc = 	icode == OPL ||
-				icode in { MUL } && ifun in {0, 1};
+				icode == MUL && ifun in {0, 1};
 
 ################ Memory Stage    ###################################
 
