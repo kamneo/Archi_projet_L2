@@ -86,7 +86,7 @@ intsig valM	'valm'			# Value read from memory
 
 # Does fetched instruction require a regid byte?
 bool need_regids =
-	icode in { RRMOVL, OPL, IOPL, PUSHL, POPL, IRMOVL, RMMOVL, MRMOVL };
+	icode in { RRMOVL, OPL, IOPL, PUSHL, POPL, IRMOVL, RMMOVL, MRMOVL, MUL };
 
 # Does fetched instruction require a constant word?
 
@@ -96,12 +96,13 @@ bool need_valC =
 
 bool instr_valid = icode in 
 	{ NOP, HALT, RRMOVL, IRMOVL, RMMOVL, MRMOVL,
-	       OPL, IOPL, JXX, CALL, RET, PUSHL, POPL, ENTER };
+	       MUL, OPL, IOPL, JXX, CALL, RET, PUSHL, POPL, ENTER };
 
 #Exercice 3 question 2:
 int instr_next_ifun = [
 	icode == MUL && ifun == 2 && cc != 2 : 1;
-	icode == ENTER && ifun == 0 : 1;
+	icode in { MUL, ENTER} && ifun == 0 : 1;
+	icode in { MUL } && ifun == 1 : 2;
     1 : -1;
 ];
 
