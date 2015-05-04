@@ -82,7 +82,7 @@ instr_t instruction_set[] =
     {"isarl",  HPACK(I_ALUI, A_SAR),  6, I_ARG, 2, 4, R_ARG, 1, 0 },
     {"leave",  HPACK(I_LEAVE, 0), 1, NO_ARG, 0, 0, NO_ARG, 0, 0 },
     /* this is just a hack to make the I_POP2 code have an associated name */
-    {"pop2",   HPACK(I_POP2, 0) , 0, NO_ARG, 0, 0, NO_ARG, 0, 0 },
+    //{"pop2",   HPACK(I_POP2, 0) , 0, NO_ARG, 0, 0, NO_ARG, 0, 0 },
     /* JB ajout 'jreg' et 'jmem' */
     {"jreg",   HPACK(I_JREG, 0) , 2, R_ARG, 1, 1, NO_ARG, 0, 0 },
     //{"jmem",   HPACK(I_JMEM, 0), 6, M_ARG, 1, 0, NO_ARG, 0, 0 },
@@ -95,6 +95,10 @@ instr_t instruction_set[] =
     {"mul",     HPACK(I_MUL, 0), 2, R_ARG, 1, 1, R_ARG, 1, 0 },
     {"mul1",    HPACK(I_MUL, 1), 2, R_ARG, 1, 1, R_ARG, 1, 0 },
     {"mul2",    HPACK(I_MUL, 2), 2, R_ARG, 1, 1, R_ARG, 1, 0 },
+
+    /* Exercice 3.3 */
+    {"stos",    HPACK(I_STOS, 0), 1, NO_ARG, 0, 0, NO_ARG, 0, 0 },
+    {"stos1",    HPACK(I_STOS, 1), 1, NO_ARG, 0, 0, NO_ARG, 0, 0 },
 
     /* For allocation instructions, arg1hi indicates number of bytes */
     {".byte",  0x00, 1, I_ARG, 0, 1, NO_ARG, 0, 0 },

@@ -42,7 +42,10 @@ intsig LEAVE	'I_LEAVE'
 intsig ENTER	'I_ENTER'
 #Exercice 3.2
 intsig MUL	'I_MUL'
+#Exercice 3.3
+intsig STOS	'I_STOS'
 
+intsig REDI		'REG_EDI'
 intsig REAX		'REG_EAX'
 intsig cc 'cc'	
 
@@ -96,7 +99,7 @@ bool need_valC =
 
 bool instr_valid = icode in 
 	{ NOP, HALT, RRMOVL, IRMOVL, RMMOVL, MRMOVL,
-	       MUL, OPL, IOPL, JXX, CALL, RET, PUSHL, POPL, ENTER };
+	       MUL, OPL, IOPL, JXX, CALL, RET, PUSHL, POPL, ENTER, STOS};
 
 #Exercice 3 question 2:
 int instr_next_ifun = [
@@ -113,6 +116,8 @@ int instr_next_ifun = [
 int srcA = [
 	#Exercice 3 question 2:
 	icode == ENTER : REBP;
+	#Exercice 3.3 :
+	icode == STOS : REAX;
 	icode in { RRMOVL, RMMOVL, OPL, PUSHL } || icode == MUL && ifun == 2 : rA;
 	icode in { POPL, RET } : RESP;
 	1 : RNONE; # Don't need register
@@ -124,6 +129,7 @@ int srcB = [
 	icode in { OPL, IOPL, RMMOVL, MRMOVL } || icode == MUL && ifun == 1 : rB;
 	icode == MUL && ifun == 2 : REAX;
 	icode in { PUSHL, POPL, CALL, RET, ENTER } : RESP;
+	icode == STOS : REDI;
 	1 : RNONE;  # Don't need register
 ];
 
@@ -137,6 +143,7 @@ int dstE = [
 	icode == MUL && ifun == 2 && cc != 2 : REAX;
 	icode == MUL && ifun == 1 : rB;
 	icode in { PUSHL, POPL, CALL, RET, ENTER } : RESP;
+	icode == STOS : REDI;
 	1 : RNONE;  # Don't need register
 ];
 
@@ -159,13 +166,13 @@ int aluA = [
 	icode == MUL && ifun == 1 : -1;
 	icode == ENTER && ifun == 1 || icode == MUL && ifun == 0 : 0;
 	icode in { CALL, PUSHL } : -4;
-	icode in { RET, POPL } : 4;
+	icode in { RET, POPL, STOS } : 4;
 	# Other instructions don't need ALU
 ];
 
 ## Select input B to ALU
 int aluB = [
-	icode in { RMMOVL, MRMOVL, OPL, IOPL, CALL, PUSHL, RET, POPL, ENTER } || icode == MUL && ifun in { 1, 2 } : valB;
+	icode in { RMMOVL, MRMOVL, OPL, IOPL, CALL, PUSHL, RET, POPL, ENTER, STOS} || icode == MUL && ifun in { 1, 2 } : valB;
 	icode in { RRMOVL, IRMOVL } || icode == MUL && ifun == 0 : 0;
 	# Other instructions don't need ALU
 ];
@@ -186,8 +193,8 @@ bool set_cc = 	icode == OPL ||
 bool mem_read = icode in { MRMOVL, POPL, RET };
 
 ## Set write control signal
-											#Exercice 3 question 2:
-bool mem_write = icode in { RMMOVL, PUSHL, CALL } || icode == ENTER && ifun == 0;
+#Exercice 3 question 2:
+bool mem_write = icode in { RMMOVL, PUSHL, CALL, STOS} || icode == ENTER && ifun == 0;
 
 ## Select memory address
 int mem_addr = [
@@ -195,6 +202,7 @@ int mem_addr = [
 	icode == ENTER && ifun == 0 : valE;
 	icode in { RMMOVL, PUSHL, CALL, MRMOVL } : valE;
 	icode in { POPL, RET } : valA;
+	icode == STOS : valB;
 	# Other instructions don't need address
 ];
 
@@ -203,7 +211,7 @@ int mem_data = [
 	#Exercice 3 question 2:
 	icode == ENTER && ifun == 0 : valA;
 	# Value from register
-	icode in { RMMOVL, PUSHL } : valA;
+	icode in { RMMOVL, PUSHL, STOS } : valA;
 	# Return PC
 	icode == CALL : valP;
 	# Default: Don't write anything

@@ -687,7 +687,7 @@ static exc_t sim_step_pipe(int max_instr)
     }
 
     /* Performance monitoring */
-    if (mem_wb_curr->exception != EXC_BUBBLE && mem_wb_curr->icode != I_POP2) {
+    if (mem_wb_curr->exception != EXC_BUBBLE/* && mem_wb_curr->icode != I_POP2*/) {
 	starting_up = 0;
 	instructions++;
 	cycles++;
