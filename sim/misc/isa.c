@@ -84,7 +84,7 @@ instr_t instruction_set[] =
     /* this is just a hack to make the I_POP2 code have an associated name */
     //{"pop2",   HPACK(I_POP2, 0) , 0, NO_ARG, 0, 0, NO_ARG, 0, 0 },
     /* JB ajout 'jreg' et 'jmem' */
-    {"jreg",   HPACK(I_JREG, 0) , 2, R_ARG, 1, 1, NO_ARG, 0, 0 },
+    //{"jreg",   HPACK(I_JREG, 0) , 2, R_ARG, 1, 1, NO_ARG, 0, 0 },
     //{"jmem",   HPACK(I_JMEM, 0), 6, M_ARG, 1, 0, NO_ARG, 0, 0 },
 
     /* Exercice 3.1 */
@@ -99,6 +99,8 @@ instr_t instruction_set[] =
     /* Exercice 3.3 */
     {"stos",    HPACK(I_STOS, 0), 1, NO_ARG, 0, 0, NO_ARG, 0, 0 },
     {"stos1",    HPACK(I_STOS, 1), 1, NO_ARG, 0, 0, NO_ARG, 0, 0 },
+    {"repstos", HPACK(I_REPSTOS, 0), 1, NO_ARG, 0, 0, NO_ARG, 0, 0 },
+    {"repstos1", HPACK(I_REPSTOS, 1), 1, NO_ARG, 0, 0, NO_ARG, 0, 0 },
 
     /* For allocation instructions, arg1hi indicates number of bytes */
     {".byte",  0x00, 1, I_ARG, 0, 1, NO_ARG, 0, 0 },

@@ -1,0 +1,5 @@
+	irmovl 300, %edi
+	irmovl 1, %eax
+	irmovl 5, %ecx
+	repstos
+	halt

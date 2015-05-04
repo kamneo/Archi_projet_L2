@@ -36,7 +36,7 @@ intsig RET	'I_RET'
 intsig PUSHL	'I_PUSHL'
 intsig POPL	'I_POPL'
 #intsig JMEM	'I_JMEM'
-intsig JREG	'I_JREG'
+#intsig JREG	'I_JREG'
 intsig LEAVE	'I_LEAVE'
 # Exercice 3.1
 intsig ENTER	'I_ENTER'
@@ -44,8 +44,10 @@ intsig ENTER	'I_ENTER'
 intsig MUL	'I_MUL'
 #Exercice 3.3
 intsig STOS	'I_STOS'
+intsig REPSTOS	'I_REPSTOS'
 
 intsig REDI		'REG_EDI'
+intsig RECX		'REG_ECX'
 intsig REAX		'REG_EAX'
 intsig cc 'cc'	
 
@@ -99,13 +101,13 @@ bool need_valC =
 
 bool instr_valid = icode in 
 	{ NOP, HALT, RRMOVL, IRMOVL, RMMOVL, MRMOVL,
-	       MUL, OPL, IOPL, JXX, CALL, RET, PUSHL, POPL, ENTER, STOS};
+	       MUL, OPL, IOPL, JXX, CALL, RET, PUSHL, POPL, ENTER, STOS, REPSTOS};
 
 #Exercice 3 question 2:
 int instr_next_ifun = [
-	icode in { MUL, ENTER} && ifun == 0 : 1;
-	icode in { MUL } && ifun == 1 : 2;
-	icode == MUL && ifun == 2 && cc != 2 : 1;
+	icode == REPSTOS && ifun == 1 : 0;
+	icode in { ENTER, MUL } && ifun == 0 || icode == MUL && ifun == 2 && cc != 2 || icode == REPSTOS && ifun == 0 && cc != 2 : 1;
+ 	icode in { MUL } && ifun == 1 : 2;
     1 : -1;
 ];
 
@@ -117,9 +119,10 @@ int srcA = [
 	#Exercice 3 question 2:
 	icode == ENTER : REBP;
 	#Exercice 3.3 :
-	icode == STOS : REAX;
+	icode == STOS || icode == REPSTOS && ifun == 1 : REAX;
 	icode in { RRMOVL, RMMOVL, OPL, PUSHL } || icode == MUL && ifun == 2 : rA;
 	icode in { POPL, RET } : RESP;
+	icode == REPSTOS && ifun == 0 : RECX;
 	1 : RNONE; # Don't need register
 ];
 
@@ -129,7 +132,8 @@ int srcB = [
 	icode in { OPL, IOPL, RMMOVL, MRMOVL } || icode == MUL && ifun == 1 : rB;
 	icode == MUL && ifun == 2 : REAX;
 	icode in { PUSHL, POPL, CALL, RET, ENTER } : RESP;
-	icode == STOS : REDI;
+	icode == STOS || icode == REPSTOS && ifun == 1 : REDI;
+	icode == REPSTOS && ifun == 0 : RECX;
 	1 : RNONE;  # Don't need register
 ];
 
@@ -143,7 +147,8 @@ int dstE = [
 	icode == MUL && ifun == 2 && cc != 2 : REAX;
 	icode == MUL && ifun == 1 : rB;
 	icode in { PUSHL, POPL, CALL, RET, ENTER } : RESP;
-	icode == STOS : REDI;
+	icode == STOS || icode == REPSTOS && ifun == 1 : REDI;
+	icode == REPSTOS && ifun == 0 : RECX;
 	1 : RNONE;  # Don't need register
 ];
 
@@ -163,16 +168,17 @@ int aluA = [
 	icode in { RMMOVL, MRMOVL } : valC;
 	#Exercice 3 question 2:
 	icode == ENTER && ifun == 0 : -4;
-	icode == MUL && ifun == 1 : -1;
+	icode == MUL && ifun == 1 || icode == REPSTOS && ifun == 0 : -1;
 	icode == ENTER && ifun == 1 || icode == MUL && ifun == 0 : 0;
 	icode in { CALL, PUSHL } : -4;
-	icode in { RET, POPL, STOS } : 4;
+	#Exercice 3 question 3:
+	icode in { RET, POPL, STOS } || icode == REPSTOS && ifun == 1 : 4;
 	# Other instructions don't need ALU
 ];
 
 ## Select input B to ALU
 int aluB = [
-	icode in { RMMOVL, MRMOVL, OPL, IOPL, CALL, PUSHL, RET, POPL, ENTER, STOS} || icode == MUL && ifun in { 1, 2 } : valB;
+	icode in { RMMOVL, MRMOVL, OPL, IOPL, CALL, PUSHL, RET, STOS, ENTER, POPL } || icode == REPSTOS && ifun == 1 || icode == MUL && ifun in { 1, 2 } || icode == REPSTOS && ifun == 0 : valB;
 	icode in { RRMOVL, IRMOVL } || icode == MUL && ifun == 0 : 0;
 	# Other instructions don't need ALU
 ];
@@ -185,7 +191,8 @@ int alufun = [
 
 ## Should the condition codes be updated?
 bool set_cc = 	icode == OPL ||
-				icode == MUL && ifun in {0, 1};
+				icode == MUL && ifun in {0, 1} ||
+				icode == REPSTOS && ifun == 0;
 
 ################ Memory Stage    ###################################
 
@@ -194,7 +201,7 @@ bool mem_read = icode in { MRMOVL, POPL, RET };
 
 ## Set write control signal
 #Exercice 3 question 2:
-bool mem_write = icode in { RMMOVL, PUSHL, CALL, STOS } || icode == ENTER && ifun == 0;
+bool mem_write = icode in { RMMOVL, PUSHL, CALL, STOS } || icode == ENTER && ifun == 0|| icode == REPSTOS && ifun == 1;
 
 ## Select memory address
 int mem_addr = [
@@ -202,14 +209,14 @@ int mem_addr = [
 	icode == ENTER && ifun == 0 : valE;
 	icode in { RMMOVL, PUSHL, CALL, MRMOVL } : valE;
 	icode in { POPL, RET } : valA;
-	icode == STOS : valB;
+	icode == STOS || icode == REPSTOS && ifun == 1 : valB;
 	# Other instructions don't need address
 ];
 
 ## Select memory input data
 int mem_data = [
 	#Exercice 3 question 2:
-	icode == ENTER && ifun == 0 : valA;
+	icode == ENTER && ifun == 0 || icode == REPSTOS && ifun == 1: valA;
 	# Value from register
 	icode in { RMMOVL, PUSHL, STOS } : valA;
 	# Return PC

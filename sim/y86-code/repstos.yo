@@ -1,0 +1,5 @@
+  0x000: 30872c010000 | 	irmovl 300, %edi
+  0x006: 308001000000 | 	irmovl 1, %eax
+  0x00c: 308105000000 | 	irmovl 5, %ecx
+  0x012: e0           | 	repstos
+  0x013: 10           | 
