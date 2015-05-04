@@ -30,10 +30,8 @@ intsig MRMOVL	'I_MRMOVL'
 intsig OPL	'I_ALU'
 intsig IOPL	'I_ALUI'
 intsig JXX	'I_JXX'
-intsig CALL	'I_CALL'
-intsig RET	'I_RET'
-intsig PUSHL	'I_PUSHL'
-intsig POPL	'I_POPL'
+intsig PUSHLCALL	'I_PUSHLCALL'
+intsig POPLRET	'I_POPLRET'
 intsig JMEM	'I_JMEM'
 intsig JREG	'I_JREG'
 intsig LEAVE	'I_LEAVE'
@@ -42,17 +40,15 @@ intsig ENTER	'I_ENTER'
 # Exercice 3.2
 intsig MUL		'I_MUL'
 # Exercice 3.3
-intsig LODS		'I_LODS'
 intsig STOS		'I_STOS'
-intsig MOVS		'I_MOVS'
 intsig REPSTOS		'I_REPSTOS'
 
 
 ##### Symbolic representation of Y86 Registers referenced explicitly #####
 intsig REAX		'REG_EAX'
-intsig RECX		'REG-ECX'
+intsig RECX		'REG_ECX'
 intsig RESI     'REG_ESI'
-intsig REDI     'RED_EDI'
+intsig REDI     'REG_EDI'
 intsig RESP     'REG_ESP'    	# Stack Pointer
 intsig REBP     'REG_EBP'    	# Frame Pointer
 intsig RNONE    'REG_NONE'   	# Special value indicating "no register"
@@ -140,36 +136,33 @@ int f_pc = [
 	# Mispredicted branch.  Fetch at incremented PC
 	M_icode == JXX && !M_Bch : M_valA;
 	# Completion of RET instruction.
-	W_icode == RET : W_valM;
+	W_icode == POPLRET : W_valM;
 	# Default: Use predicted value of PC
 	1 : F_predPC;
 ];
 
 # Does fetched instruction require a regid byte?
 bool need_regids =
-	f_icode in { RRMOVL, OPL,  RMMOVL, MRMOVL, MUL } || f_icode in { PUSHCALL, POPLRET } && f_ifun == 0;
+	f_icode in { RRMOVL, OPL,  RMMOVL, MRMOVL, MUL } || f_icode in { PUSHLCALL, POPLRET } && f_ifun == 0;
 
 # Does fetched instruction require a constant word?
 bool need_valC =
-	f_icode in {  RMMOVL, MRMOVL, JXX, OPL, RRMOVL } || f_icode == PUSHCALL && f_ifun == 1;
+	f_icode in {  RMMOVL, MRMOVL, JXX, OPL, RRMOVL } || f_icode == PUSHLCALL && f_ifun == 1;
 
 bool instr_valid = f_icode in 
 	{ NOP, HALT, RRMOVL, RMMOVL, MRMOVL,
-	       OPL, JXX, PUSHCALL, POPLRET, ENTER, MUL, LODS, STOS, MOVS, REPSTOS };
+	       OPL, JXX, PUSHLCALL, POPLRET, ENTER, MUL, STOS, REPSTOS };
 
 # Predict next value of PC
 int new_F_predPC = [
-	f_icode == JXX || f_icode == PUSHCALL && f_ifun == 1: f_valC;
+	f_icode == JXX || f_icode == PUSHLCALL && f_ifun == 1: f_valC;
 	1 : f_valP;
 ];
 
 int instr_next_ifun = [
-	f_icode in { MUL, STOS, ENTER, MOVS } && f_ifun == 0 : 1;
-	f_icode in { MUL, MOVS } && f_ifun == 1 : 2;
+	f_icode in { MUL, STOS, ENTER } && f_ifun == 0 : 1;
+	f_icode in { MUL } && f_ifun == 1 : 2;
 	f_icode == MUL && f_ifun == 2 && cc != 2 : 1;
-	f_icode == MOVS && f_ifun == 2 : 5;
-	f_icode == MOVS && f_ifun ==  5 : 3;
-	f_icode == MOVS && f_ifun ==  3 : 4;
 	f_icode == REPSTOS && f_ifun == 0 && cc != 2 : 1;
 	f_icode == REPSTOS && f_ifun == 1 : 2;
 	f_icode == REPSTOS && f_ifun == 1 : 2;
@@ -184,13 +177,9 @@ int instr_next_ifun = [
 ## What register should be used as the A source?
 int new_E_srcA = [
 	D_icode == ENTER : REBP;
-	D_icode in { RRMOVL, RMMOVL, OPL } || D_icode == PUSHCALL && D_ifun == 0 || D_icde == MUL && D_ifun == 2 : D_rA;
-	D_icode == LODS : RESI;
+	D_icode in { RRMOVL, RMMOVL, OPL } || D_icode == PUSHLCALL && D_ifun == 0 || D_icode == MUL && D_ifun == 2 : D_rA;
 	D_icode == STOS && D_ifun == 0 : REAX;
-	D_icode == MOVS && D_ifun in { 0, 2 } : REAX;
-	D_icode == MOVS && D_ifun == 1 : RESI;
-	D_icode == MOVS && D_ifun == 3 : RESP;
-	D_icode in { MOVS, REPSTOS } && D_ifun == 1 : REAX;
+	D_icode in { REPSTOS } && D_ifun == 1 : REAX;
 	1 : RNONE; # Don't need register
 ];
 
@@ -199,11 +188,7 @@ int new_E_srcB = [
 	D_icode in { OPL, RMMOVL, MRMOVL } || D_icode == MUL && D_ifun == 1 : D_rB;
 	D_icode in { PUSHLCALL, POPLRET, ENTER } : RESP;
 	D_icode == MUL && D_ifun == 2 : REAX;
-	D_icode == LODS : RESI;
 	D_icode == STOS : REDI;
-	D_icode == MOVS && D_ifun in { 0, 3 } : RESP;
-	D_icode == MOVS && D_ifun == 1 : RESI;
-	D_icode == MOVS && D_ifun in { 2, 4 } : REDI;
 	D_icode == REPSTOS && D_ifun == 0 : RECX;
 	D_icode == REPSTOS && D_ifun in { 1, 2 } : REDI;
 	1 : RNONE;  # Don't need register
@@ -215,11 +200,7 @@ int new_E_dstE = [
 	D_icode in { PUSHLCALL, POPLRET } : RESP;
 	D_icode == MUL && D_ifun in { 0, 2 } : REAX;
 	D_icode == ENTER && D_ifun == 1 : REBP;
-	D_icode == LODS : RESI;
 	D_icode == STOS && D_ifun == 1 : REDI;
-	D_icode == MOVS && D_ifun in { 0, 3 } : RESP;
-	D_icode == MOVS && D_ifun == 1 : RESI;
-	D_icode == MOVS && D_ifun == 4 : REDI;
 	D_icode == REPSTOS && D_ifun == 0 : RECX;
 	D_icode == REPSTOS && D_ifun == 2 && cc != 2 : REDI;
 	1 : DNONE;  # Don't need register DNONE, not RNONE
@@ -228,7 +209,6 @@ int new_E_dstE = [
 ## What register should be used as the M destination?
 int new_E_dstM = [
 	D_icode == MRMOVL || D_icode == POPLRET && D_ifun == 0 : D_rA;
-	D_icode == LODS || D_icode == MOVS && D_ifun in { 1, 3 } : REAX;
 	1 : DNONE;  # Don't need register DNONE, not RNONE
 ];
 
@@ -257,27 +237,23 @@ int new_E_valB = [
 
 ## Select input A to ALU
 int aluA = [
-	E_icode in { RRMOVL, OPL } || E_icode = MUL && E_ifun == 2 : E_vala;
-	E_icode in { RMMOVL, MRMOVL } || E_icode in { OPL, RRMOVL } && E_srcA = RNONE : E_valC;
-	E_icode == PUSHLCALL || E_icode in { ENTER, MOVS } && E_ifun == 0 : -4;
+	E_icode in {RRMOVL, OPL } || E_icode == MUL && E_ifun == 2 : E_valA;
+	E_icode in {RMMOVL, MRMOVL } || E_icode in { OPL, RRMOVL } && E_srcA == RNONE : E_valC;
+	E_icode == PUSHLCALL || E_icode in {ENTER} && E_ifun == 0 : 0;
 	E_icode == MUL && E_ifun == 1 : -1;
-	E_icode == ENTER && E_ifun == 1 || E_icode == MUL && E_ifun == 0 : 0;
-	E_icode in { POPLRET, LODS } : 4;
+	E_icode == ENTER && E_ifun == 1 || E_icode == MUL && E_ifun == 0: 0;
+	E_icode == POPLRET : 4;
 	E_icode == STOS && E_ifun == 0 : 0;
 	E_icode == STOS && E_ifun == 1 : 4;
-	E_icode == MOVS && E_ifun == 2 : 0;
-	E_icode == MOVS && E_ifun in { 1, 3, 4 } : 4;
 	E_icode == REPSTOS && E_ifun == 0 : -1;
 	E_icode == REPSTOS && E_ifun == 1 : 0;
 	E_icode == REPSTOS && E_ifun == 2 : 4;
-	# Other instructions don't need ALU
 ];
 
 ## Select input B to ALU
 int aluB = [
-	E_icode in { RMMOVL, MRMOVL, OPL, PUSHLCALL, POPLRET, ENTER, LODS, MOVS } || E_icode == REPTOS && E_ifun in { 0, 1, 2 } || E_icode == MUL && E_ifun in { 1, 2 } || E_icode )) STOS && E_ifun == 0 : E_valB;
-	E_icode == RRMOVL || E_icode == MUL && E_ifun == 0 : 0;
-	# Other instructions don't need ALU
+	E_icode in {RMMOVL, MRMOVL, OPL, PUSHLCALL, POPLRET, ENTER } || E_icode == REPSTOS && E_ifun in {0, 1, 2 } || E_icode == MUL && E_ifun in {1 , 2} || E_icode == STOS && E_ifun == 0 : E_valB;
+	E_icode == RRMOVL || E_icode == MUL && E_ifun == 0 : 0;
 ];
 
 ## Set the ALU function
@@ -287,27 +263,24 @@ int alufun = [
 ];
 
 ## Should the condition codes be updated?
-bool set_cc = E_icode == OPL || E_icode in { MUL, REPSTOS } && E_ifun == 0 || E_icode == MUL && E_ifun == 1;
-
+bool set_cc = E_icode == OPL || E_icode in {MUL, REPSTOS} && E_ifun == 0 || E_icode == MUL && E_ifun == 1;
 
 ################ Memory Stage ######################################
 
 ## Select memory address
 int mem_addr = [
 	M_icode in { RMMOVL, PUSHLCALL, MRMOVL, STOS } || M_icode == ENTER && M_ifun == 0 : M_valE;
-	M_icode in { POPLRET, LODS } : M_valA;
-	M_icode in { ENTER, MOVS } && M_ifun  == 0 : M_valE;
-	M_icode == MOVS && M_ifun in { 1, 3 } : M_valA;
-	M_icode == MOVS & M_ifun == 2 : M_valE;
+	M_icode in { POPLRET } : M_valA;
+	M_icode in { ENTER } && M_ifun  == 0 : M_valE;
 	M_icode == REPSTOS && M_ifun == 1 : M_valE;
 	# Other instructions don't need address
 ];
 
 ## Set read control signal
-bool mem_read = M_icode in { MRMOVL, POPLRET, LODS } || M_icode == MOVS && M_ifun in { 1, 3 };
+bool mem_read = M_icode in { MRMOVL, POPLRET };
 
 ## Set write control signal
-bool mem_write = M_icode in { RMMOVL, PUSHLCALL } || M_icode == ENTER && M_ifun == 0 || M_icode == STOS && M_ifun == 0 || M_icode == MOVS && M_ifun in { 0, 2 } || M_icode == REPSTOS && M_ifun == 1 && cc !=2;
+bool mem_write = M_icode in { RMMOVL, PUSHLCALL } || M_icode == ENTER && M_ifun == 0 || M_icode == STOS && M_ifun == 0 || M_icode == REPSTOS && M_ifun == 1 && cc !=2;
 
 
 ################ Pipeline Register Control #########################
@@ -337,11 +310,11 @@ bool D_bubble =
 # Should I stall or inject a bubble into Pipeline Register E?
 # At most one of these can be true.
 bool E_stall = 0;
-bool E_bubble =
+bool E_bubble = 
 	# Mispredicted branch, drop instruction
-	(E_icode == JXX && !e_Bch) ||
-	# Conditions for a load/use hazard, stalling in decode
-	E_dstM in { d_srcA, d_srcB} || E_icode == MUL && E_ifun == 2 && cc == 2;
+	(E_icode == JXX && ! e_Bch) || 
+	# Coditions for a load/use hazard, stalling in decode
+	E_dstM in { d_srcA, d_srcB } || E_icode == MUL && E_ifun == 2 && cc == 2;
 
 # Should I stall or inject a bubble into Pipeline Register M?
 # At most one of these can be true.

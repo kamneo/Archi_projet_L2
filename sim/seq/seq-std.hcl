@@ -31,10 +31,8 @@ intsig MRMOVL	'I_MRMOVL'
 intsig OPL	'I_ALU'
 intsig IOPL	'I_ALUI'
 intsig JXX	'I_JXX'
-intsig CALL	'I_CALL'
-intsig RET	'I_RET'
-intsig PUSHL	'I_PUSHL'
-intsig POPL	'I_POPL'
+intsig PUSHLCALL	'I_PUSHLCALL'
+intsig POPLRET	'I_POPLRET'
 #intsig JMEM	'I_JMEM'
 #intsig JREG	'I_JREG'
 intsig LEAVE	'I_LEAVE'
@@ -91,17 +89,18 @@ intsig valM	'valm'			# Value read from memory
 
 # Does fetched instruction require a regid byte?
 bool need_regids =
-	icode in { RRMOVL, OPL, IOPL, PUSHL, POPL, IRMOVL, RMMOVL, MRMOVL, MUL };
+	icode in { RRMOVL, OPL, RMMOVL, MRMOVL, MUL } ||
+	icode in { PUSHLCALL, POPLRET } && ifun == 0;
 
 # Does fetched instruction require a constant word?
 
 	#Exercice 1 question 2 :
 bool need_valC =
-	icode in { RMMOVL, MRMOVL, JXX, CALL, IOPL, IRMOVL };
+	icode in { RMMOVL, MRMOVL, JXX, PUSHLCALL, IOPL, IRMOVL };
 
 bool instr_valid = icode in 
 	{ NOP, HALT, RRMOVL, IRMOVL, RMMOVL, MRMOVL,
-	       MUL, OPL, IOPL, JXX, CALL, RET, PUSHL, POPL, ENTER, STOS, REPSTOS};
+	       MUL, OPL, IOPL, JXX, PUSHLCALL, POPLRET, ENTER, STOS, REPSTOS};
 
 #Exercice 3 question 2:
 int instr_next_ifun = [
@@ -120,8 +119,8 @@ int srcA = [
 	icode == ENTER : REBP;
 	#Exercice 3.3 :
 	icode == STOS || icode == REPSTOS && ifun == 1 : REAX;
-	icode in { RRMOVL, RMMOVL, OPL, PUSHL } || icode == MUL && ifun == 2 : rA;
-	icode in { POPL, RET } : RESP;
+	icode in { RRMOVL, RMMOVL, OPL, PUSHLCALL } || icode == MUL && ifun == 2 : rA;
+	icode == POPLRET : RESP;
 	icode == REPSTOS && ifun == 0 : RECX;
 	1 : RNONE; # Don't need register
 ];
@@ -131,7 +130,7 @@ int srcB = [
 	#Exercice 3 question 2:
 	icode in { OPL, IOPL, RMMOVL, MRMOVL } || icode == MUL && ifun == 1 : rB;
 	icode == MUL && ifun == 2 : REAX;
-	icode in { PUSHL, POPL, CALL, RET, ENTER } : RESP;
+	icode in { PUSHLCALL, POPLRET, ENTER } : RESP;
 	icode == STOS || icode == REPSTOS && ifun == 1 : REDI;
 	icode == REPSTOS && ifun == 0 : RECX;
 	1 : RNONE;  # Don't need register
@@ -146,7 +145,7 @@ int dstE = [
 	icode == MUL && ifun == 0 : REAX;
 	icode == MUL && ifun == 2 && cc != 2 : REAX;
 	icode == MUL && ifun == 1 : rB;
-	icode in { PUSHL, POPL, CALL, RET, ENTER } : RESP;
+	icode in { PUSHLCALL, POPLRET, ENTER } : RESP;
 	icode == STOS || icode == REPSTOS && ifun == 1 : REDI;
 	icode == REPSTOS && ifun == 0 : RECX;
 	1 : RNONE;  # Don't need register
@@ -154,7 +153,7 @@ int dstE = [
 
 ## What register should be used as the M destination?
 int dstM = [
-	icode in { MRMOVL, POPL } : rA;
+	icode in { MRMOVL } || icode == POPLRET && ifun == 0 : rA;
 	1 : RNONE;  # Don't need register
 ];
 
@@ -170,15 +169,15 @@ int aluA = [
 	icode == ENTER && ifun == 0 : -4;
 	icode == MUL && ifun == 1 || icode == REPSTOS && ifun == 0 : -1;
 	icode == ENTER && ifun == 1 || icode == MUL && ifun == 0 : 0;
-	icode in { CALL, PUSHL } : -4;
+	icode == PUSHLCALL  : -4;
 	#Exercice 3 question 3:
-	icode in { RET, POPL, STOS } || icode == REPSTOS && ifun == 1 : 4;
+	icode in { POPLRET, STOS } || icode == REPSTOS && ifun == 1 : 4;
 	# Other instructions don't need ALU
 ];
 
 ## Select input B to ALU
 int aluB = [
-	icode in { RMMOVL, MRMOVL, OPL, IOPL, CALL, PUSHL, RET, STOS, ENTER, POPL } || icode == REPSTOS && ifun == 1 || icode == MUL && ifun in { 1, 2 } || icode == REPSTOS && ifun == 0 : valB;
+	icode in { RMMOVL, MRMOVL, OPL, IOPL ,PUSHLCALL, POPLRET, STOS, ENTER } || icode == REPSTOS && ifun == 1 || icode == MUL && ifun in { 1, 2 } || icode == REPSTOS && ifun == 0 : valB;
 	icode in { RRMOVL, IRMOVL } || icode == MUL && ifun == 0 : 0;
 	# Other instructions don't need ALU
 ];
@@ -197,18 +196,18 @@ bool set_cc = 	icode == OPL ||
 ################ Memory Stage    ###################################
 
 ## Set read control signal
-bool mem_read = icode in { MRMOVL, POPL, RET };
+bool mem_read = icode in { MRMOVL, POPLRET };
 
 ## Set write control signal
 #Exercice 3 question 2:
-bool mem_write = icode in { RMMOVL, PUSHL, CALL, STOS } || icode == ENTER && ifun == 0|| icode == REPSTOS && ifun == 1;
+bool mem_write = icode in { RMMOVL, PUSHLCALL, STOS } || icode == ENTER && ifun == 0|| icode == REPSTOS && ifun == 1;
 
 ## Select memory address
 int mem_addr = [
 	#Exercice 3 question 2:
 	icode == ENTER && ifun == 0 : valE;
-	icode in { RMMOVL, PUSHL, CALL, MRMOVL } : valE;
-	icode in { POPL, RET } : valA;
+	icode in { RMMOVL, PUSHLCALL, MRMOVL } : valE;
+	icode in { POPLRET } : valA;
 	icode == STOS || icode == REPSTOS && ifun == 1 : valB;
 	# Other instructions don't need address
 ];
@@ -216,11 +215,11 @@ int mem_addr = [
 ## Select memory input data
 int mem_data = [
 	#Exercice 3 question 2:
-	icode == ENTER && ifun == 0 || icode == REPSTOS && ifun == 1: valA;
+	icode in { ENTER, PUSHLCALL } && ifun == 0 || icode == REPSTOS && ifun == 1: valA;
 	# Value from register
-	icode in { RMMOVL, PUSHL, STOS } : valA;
+	icode in { RMMOVL, STOS } : valA;
 	# Return PC
-	icode == CALL : valP;
+	icode == PUSHLCALL && ifun == 1: valP;
 	# Default: Don't write anything
 ];
 
@@ -230,11 +229,11 @@ int mem_data = [
 
 int new_pc = [
 	# Call.  Use instruction constant
-	icode == CALL : valC;
+	icode == PUSHLCALL && ifun == 1 : valC;
 	# Taken branch.  Use instruction constant
 	icode == JXX && Bch : valC;
 	# Completion of RET instruction.  Use value from stack
-	icode == RET : valM;
+	icode == POPLRET : valM;
 	# Default: Use incremented PC
 	1 : valP;
 ];

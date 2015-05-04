@@ -845,6 +845,7 @@ exc_t step_state(state_ptr s, FILE *error_file)
 	else
 	    s->pc = ftpc;
 	break;
+    #if 0
     case I_CALL:
 	if (!ok1) {
 	    if (error_file)
@@ -881,6 +882,7 @@ exc_t step_state(state_ptr s, FILE *error_file)
 	set_reg_val(s->r, REG_ESP, dval + 4);
 	s->pc = val;
 	break;
+    #endif
     case I_PUSHL:
 	if (!ok1) {
 	    if (error_file)

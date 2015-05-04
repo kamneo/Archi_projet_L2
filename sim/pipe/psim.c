@@ -49,6 +49,8 @@ bool_t do_check = FALSE; /* Test with ISA simulator? [TTY only] (-t) */
  *************/
 
 
+
+int gen_instr_next_ifun();
 /***************************
  * Begin function prototypes 
  ***************************/

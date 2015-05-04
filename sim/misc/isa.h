@@ -26,13 +26,19 @@ typedef enum { R_ARG, M_ARG, I_ARG, NO_ARG } arg_t;
  */
 // Exercice 3.1 :
 typedef enum { I_NOP, I_HALT, I_RRMOVL, I_IRMOVL, I_RMMOVL, I_MRMOVL,
-	       I_ALU, I_JXX, I_CALL, I_RET, I_PUSHL, I_POPL,
+	       I_ALU, I_JXX, I_CALL, I_RET, I_PUSHLCALL, I_POPLRET,
 	       I_ENTER, I_LEAVE, I_REPSTOS, I_MUL, I_STOS } itype_t;
 
 /* pour compatibilité */
-#define I_ALUI I_ALU
+#define I_POPL I_POPLRET
+#define I_RET I_POPLRET
 
-/* pour compatibilité */
+#define I_CALL I_PUSHLCALL
+#define I_PUSHL I_PUSHLCALL
+
+#define I_IRMOVL I_RRMOVL
+#define I_ALUI I_ALU
+         
 #define I_IADDL I_ALUI
 
 /* Different ALU operations */
