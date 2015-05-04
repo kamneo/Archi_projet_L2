@@ -93,6 +93,28 @@ mem_data : icode == ENTER && ifun == 0 : valA;
 
 \subsection{L'instruction "mul"}
 
+Tout comme l'instruction "enter", nous avons ajouté l'opcode I\_MUL dans le fichier "mics/isa.h", nous l'avons ajouté à la liste des instructions dans yas-grammar.lex et ajouter trois entrées dans le tableau des instructions de "mics/isa.c". Nous avons choisi de l'implementer de la façon suivante : 
+\begin{verbatim}
+EAX = 0;
+while(ECX != 0){
+    ECX--;
+    EAX += EBX;
+}
+\end{verbatim}
+
+Les trois entrées dans le tableau servent alors aux trois étapes de l'algorithme :
+
+\begin{itemize}
+	\item 0 - on initialise EAX
+	\item 1 - on décrémente ECX
+	\item 2 - on ajoute EBX à EAX si ECX supérieure à 0
+	\item -1 - on sors de la boucle
+\end{itemize}
+
+Ainsi dans le code hcl de la version sequentielle, on commence avec l'ifun à 0 
+pour initialiser \%eax à 0 puis on change d'état entre l'ifun à 1 et à 2. On fait cette opétation tanque la variable cc est différente de 2.
+Autrement l'ifun passe à -1 et on passe à l'instruction suivante.
+
 \subsection{L'instruction "repstos"}
 
 \end{document}
