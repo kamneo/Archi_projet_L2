@@ -141,6 +141,22 @@ pour initialiser \%eax à 0 puis on change d'état entre l'ifun à 1 et à 2. On
 Autrement l'ifun passe à -1 et on passe à l'instruction suivante.
 
 \subsection{L'instruction "repstos"}
+Pour cet instruction, nous avons choisi l'implémentation suivante: 
+\begin{verbatim}
+    while(ECX > 0){
+        stos();
+        ECX--;
+    }
+\end{verbatim}
+
+où la fonction stos fait :
+
+\begin{verbatim}
+    push EAX dans EDI
+    EDI += 4
+\end{verbatim}
+
+Comme pour l'instruction MUL, pour savoir si ECX est strictement positif il faut vérifier si "cc" est different de 2. Dans le cas contraire on décrémente ECX et on repasse l'ifun à 1 pour refaire la commande STOS.
 
 \end{document}
 
