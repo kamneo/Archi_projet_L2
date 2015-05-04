@@ -11,7 +11,32 @@
 
 \newpage
 \section{Exercice 1 : De la place dans les opcodes}
-Pour le premier exercice, dans l'implementation seq il y avait un piège, c'était de changer la taille des instructions contenues dans OPL et RRMOVL.
+\subsection{Factorisation de iaddl etc. avec addl etc.}
+Dans cette partie, pour l'implementation sequentielle il y avait un piège, c'était de changer la taille des instructions contenues dans OPL et RRMOVL. Donc dans le fichier "misc/isa.c", nous avons passé la taille des instructions \emph{addl, subl, andl, xorl, sall et sarl} à 6 au lieu de 2 ainsi elles ont désormais la même taille que les instructions \emph{iaddl, isubl, iandl, ixorl, isall et isarl}.\par
+\`A l'étage Execute, les IOPL utilisent valC et les OPL valA. Pour les différentier, on regarde si ra est égal à 8 (ou RNONE) si c'est le cas on passe valC à l'ALUA sinon valA.
+
+\subsection{Factorisation de irmovl avec rrmovl}
+La factorisation des deux commande est la même chose que pour les OPL et les IOPL, il faut passé la taille de RRMOVL à 6 et utiliser valC dans l'ALUA si ra est égal à RNONE si ce n'est pas le cas utiliser valA.
+
+\section{Exercice 2 : Ajout du support d'unstruction sur plusieurs cycles}
+\subsection{Version séquentielle}
+Ce n'était pas la chose la plus compliqué à faire, mais il fallait la faire correctement. Dans le fichier "seq/std_seq.hcl" nous avons ajouté l'instructions :
+\begin{verbatin}
+	int instr_next_ifun = [
+		1 : -1;
+	];
+\end{verbatin}
+Ce bloc indique au processeur quelle valeur de ifun utiliser après celle que l’on vient de traiter.
+Par convention, la valeur -1 indique que l’instruction est finie, et qu’il faut passer à la suivante.
+Le reste du code se trouve dans le fichier "seq/ssim.c"
+\subsection{version Pipe-linée}
+
+\section{Exercice 3 : Ajout d'instructions}
+\subsection{L'instruction "enter"}
+
+\subsection{L'instruction "mul"}
+
+\subsection{L'instruction "repstos"}
 
 \end{document}
 
