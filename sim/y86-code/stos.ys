@@ -1,0 +1,4 @@
+irmovl 300, %edi
+irmovl 1, %eax
+stos
+halt
