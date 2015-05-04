@@ -194,7 +194,7 @@ bool mem_read = icode in { MRMOVL, POPL, RET };
 
 ## Set write control signal
 #Exercice 3 question 2:
-bool mem_write = icode in { RMMOVL, PUSHL, CALL, STOS} || icode == ENTER && ifun == 0;
+bool mem_write = icode in { RMMOVL, PUSHL, CALL, STOS } || icode == ENTER && ifun == 0;
 
 ## Select memory address
 int mem_addr = [
