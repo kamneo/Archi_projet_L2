@@ -1,7 +1,0 @@
-  0x000: 30842c010000 | 	irmovl 300, %esp
-  0x006: 30852a000000 | 	irmovl 42, %ebp
-  0x00c: 308103000000 | 	irmovl 3, %ecx
-  0x012: a018         | 	pushl %ecx
-  0x014: c0           | 	enter
-  0x015: a018         | 	pushl %ecx
-  0x017: 10           | 
