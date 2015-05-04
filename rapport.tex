@@ -1,7 +1,8 @@
 \documentclass[12pt]{article}
-\usepackage [utf8]{inputenc}
-\usepackage [T1]{fontenc}
-\usepackage [francais]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[francais]{babel}
+\usepackage{hyperref}
 \author{LABBE Emeric, PINERO Alexandre}
 \title{Rapport de projet d'Architecture des Ordinateurs}
 
@@ -20,12 +21,12 @@ La factorisation des deux commande est la même chose que pour les OPL et les IO
 
 \section{Exercice 2 : Ajout du support d'unstruction sur plusieurs cycles}
 \subsection{Version séquentielle}
-Ce n'était pas la chose la plus compliqué à faire, mais il fallait la faire correctement. Dans le fichier "seq/std_seq.hcl" nous avons ajouté l'instructions :
-\begin{verbatin}
+Ce n'était pas la chose la plus compliqué à faire, mais il fallait la faire correctement. Dans le fichier "seq/std-seq.hcl" nous avons ajouté l'instructions :
+\begin{verbatim}
 	int instr_next_ifun = [
 		1 : -1;
 	];
-\end{verbatin}
+\end{verbatim}
 Ce bloc indique au processeur quelle valeur de ifun utiliser après celle que l’on vient de traiter.
 Par convention, la valeur -1 indique que l’instruction est finie, et qu’il faut passer à la suivante.
 Le reste du code se trouve dans le fichier "seq/ssim.c"
