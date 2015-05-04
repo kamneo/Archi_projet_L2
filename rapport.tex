@@ -19,6 +19,7 @@ Dans cette partie, pour l'implementation sequentielle il y avait un piège, c'é
 \subsection{Factorisation de irmovl avec rrmovl}
 La factorisation des deux commande est la même chose que pour les OPL et les IOPL, il faut passé la taille de RRMOVL à 6 et utiliser valC dans l'ALUA si ra est égal à RNONE si ce n'est pas le cas utiliser valA.
 
+\newpage
 \section{Exercice 2 : Ajout du support d'unstruction sur plusieurs cycles}
 \subsection{Version séquentielle}
 Ce n'était pas la chose la plus compliqué à faire, mais il fallait la faire correctement. Dans le fichier "seq/std-seq.hcl" nous avons ajouté l'instructions :
@@ -32,8 +33,63 @@ Par convention, la valeur -1 indique que l’instruction est finie, et qu’il f
 Le reste du code se trouve dans le fichier "seq/ssim.c"
 \subsection{version Pipe-linée}
 
+\newpage
 \section{Exercice 3 : Ajout d'instructions}
 \subsection{L'instruction "enter"}
+Pour ajouter l'instruction enter aux outils Y86 il a fallu modifier 5 de nos fichiers.
+Tout d'abbord dans isa.h nous avons ajouté l'opcode I\_ENTER dans le itype\_t.
+
+Dans yas-grammar.lex nous avons ajouté enter à la liste des instructions.
+
+Dans isa.c nous avons ajouté enter et enter1 au tableau instruction\_set avec l'instruction suivante :
+\begin{verbatim}
+    {"enter",   HPACK(I_ENTER, 0), 1, NO_ARG, 0, 0, NO_ARG, 0, 0 },
+
+\end{verbatim}
+
+On lui donne ici la nouvelle instruction enter, qui est la première instruction à utiliser I\_ENTER. Le paramètre 1 correspond à la taille de l'instruction.
+
+Enfin nous avons ajouté intsig ENTER dans les déclarations des fichiers seq-std.hcl et pipe-std.hcl.
+
+Ensuite nous avons implémenté cette instruction dans ces deux fichiers avec 2 comportements différents (ifun = 0 et ifun = 1).
+
+\subsubsection{Fetch Stage}
+Nous avons ajouté ENTER à la liste instr\_valid, puis nous avons mis la condition : 
+\begin{verbatim}
+icode == ENTER && ifun == 0 : 1;
+\end{verbatim}
+
+Ainsi après le premier passage de ENTER, le second prendra le meme icode et le ifun suivant.
+
+\subsubsection{Decode Stage}
+Quand on a icode == ENTER : srcA = REBP et srcB = RESP.
+
+Quand on a icode == ENTER et ifun == 1 : dstE = REBP (instruction rrmovl, \%esp, \%ebp). Sinon dstE = RESP(instruction pushl \%ebp).
+
+\subsubsection{Execute Stage}
+Dans le cas où ifun == 1 : on soustrait 4 à valB :
+\begin{verbatim}
+aluA : icode == ENTER && ifun == 0 : -4;
+aluB : icode == ENTER : valB;
+\end{verbatim}
+
+Dans le cas où ifun == 0 : valB ne change pas :
+\begin{verbatim}
+aluA : icode == ENTER && ifun == 1 : 0;
+aluB : icode == ENTER : valB;
+\end{verbatim}
+
+\subsubsection{Memory Stage}
+On ajoute a mem\_write l'instruction ENTER avec :
+\begin{verbatim}
+icode == ENTER && ifun == 0
+\end{verbatim}
+
+On écrit ensuite le contenu de valA à l'adresse valE :
+\begin{verbatim}
+mem_addr : icode == ENTER && ifun == 0 : valE;
+mem_data : icode == ENTER && ifun == 0 : valA;
+\end{verbatim}
 
 \subsection{L'instruction "mul"}
 
