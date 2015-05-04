@@ -32,6 +32,31 @@ Ce bloc indique au processeur quelle valeur de ifun utiliser après celle que l�
 Par convention, la valeur -1 indique que l’instruction est finie, et qu’il faut passer à la suivante.
 Le reste du code se trouve dans le fichier "seq/ssim.c"
 \subsection{version Pipe-linée}
+Dans le fichier psim.c, nous avons modifié la fonction do\_if\_stage afin d'obtenir le ifun.
+Nous avons donc modifié le début de cette fonction :
+\begin{verbatim}
+if(gen_instr_next_ifun () != -1){
+		if_id_next->ifun = gen_instr_next_ifun();
+		fetch_ok = TRUE;
+	}
+ else {
+	    fetch_ok = get_byte_val(mem, valp, &instr);
+	    if (fetch_ok) {
+		if_id_next->icode = GET_ICODE(instr);
+		if_id_next->ifun = GET_FUN(instr);
+	    }
+ else {
+		if_id_next->icode = I_NOP;
+		if_id_next->ifun = 0;
+		nstatus = EXC_ADDR;
+	    }
+	}
+\end{verbatim}
+
+Nous avons ensuite ajouté avant l'instruction pc\_next->pc = gen\_new\_F\_predPC(); la ligne : 
+\begin{verbatim}
+if (gen_instr_next_ifun() == -1)
+\end{verbatim}
 
 \newpage
 \section{Exercice 3 : Ajout d'instructions}
